@@ -1,15 +1,16 @@
 package bootiful.service;
 
-import org.springframework.ai.client.AiClient;
-import org.springframework.ai.document.Document;
+
+
+import org.springframework.ai.chat.ChatClient;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.chat.prompt.SystemPromptTemplate;
 import org.springframework.ai.embedding.EmbeddingClient;
-import org.springframework.ai.prompt.Prompt;
-import org.springframework.ai.prompt.SystemPromptTemplate;
-import org.springframework.ai.prompt.messages.UserMessage;
+import org.springframework.ai.document.Document ;
 import org.springframework.ai.reader.ExtractedTextFormatter;
 import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
 import org.springframework.ai.reader.pdf.config.PdfDocumentReaderConfig;
-import org.springframework.ai.retriever.VectorStoreRetriever;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.PgVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -38,11 +39,13 @@ public class ServiceApplication {
                             JdbcTemplate t) {
         return new PgVectorStore(t, ec);
     }
+/*
 
     @Bean
     VectorStoreRetriever vectorStoreRetriever(VectorStore vs) {
         return new VectorStoreRetriever(vs, 4, 0.75);
     }
+*/
 
     @Bean
     TokenTextSplitter tokenTextSplitter() {
@@ -75,7 +78,7 @@ public class ServiceApplication {
             @Value("file://${HOME}/Desktop/pdfs/medicaid-wa-faqs.pdf") Resource resource) {
         return args -> {
             init(vectorStore, jdbcTemplate, resource);
-            var response = chatbot.chat("Who’s who on Carina?");
+            var response = chatbot.chat("what should I know about the transition to consumer direct care network washington?");
             System.out.println(Map.of("response", response));
         };
     }
@@ -102,16 +105,16 @@ class Chatbot {
             {documents}
                         
             """;
-    private final AiClient aiClient;
-    private final VectorStoreRetriever vsr;
+    private final ChatClient aiClient;
+    private final VectorStore   vsr;
 
-    Chatbot(AiClient aiClient, VectorStoreRetriever vsr) {
+    Chatbot(ChatClient aiClient, VectorStore vsr) {
         this.aiClient = aiClient;
         this.vsr = vsr;
     }
 
     public String chat(String message) {
-        var listOfSimilarDocuments = this.vsr.retrieve(message);
+        var listOfSimilarDocuments = this.vsr.similaritySearch(message);
         var documents = listOfSimilarDocuments
                 .stream()
                 .map(Document::getContent)
@@ -120,8 +123,8 @@ class Chatbot {
                 .createMessage(Map.of("documents", documents));
         var userMessage = new UserMessage(message);
         var prompt = new Prompt(List.of(systemMessage, userMessage));
-        var aiResponse = aiClient.generate(prompt);
-        return aiResponse.getGeneration().getContent();
+        var aiResponse = aiClient.call(prompt);
+        return aiResponse.getResult().getOutput().getContent();
     }
 } // ...
 
