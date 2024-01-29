@@ -39,13 +39,6 @@ public class ServiceApplication {
                             JdbcTemplate t) {
         return new PgVectorStore(t, ec);
     }
-/*
-
-    @Bean
-    VectorStoreRetriever vectorStoreRetriever(VectorStore vs) {
-        return new VectorStoreRetriever(vs, 4, 0.75);
-    }
-*/
 
     @Bean
     TokenTextSplitter tokenTextSplitter() {
