@@ -1,13 +1,12 @@
 package bootiful.service;
 
 
-
 import org.springframework.ai.chat.ChatClient;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.SystemPromptTemplate;
+import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingClient;
-import org.springframework.ai.document.Document ;
 import org.springframework.ai.reader.ExtractedTextFormatter;
 import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
 import org.springframework.ai.reader.pdf.config.PdfDocumentReaderConfig;
@@ -99,15 +98,15 @@ class Chatbot {
                         
             """;
     private final ChatClient aiClient;
-    private final VectorStore   vsr;
+    private final VectorStore vectorStore;
 
-    Chatbot(ChatClient aiClient, VectorStore vsr) {
+    Chatbot(ChatClient aiClient, VectorStore vectorStore) {
         this.aiClient = aiClient;
-        this.vsr = vsr;
+        this.vectorStore = vectorStore;
     }
 
     public String chat(String message) {
-        var listOfSimilarDocuments = this.vsr.similaritySearch(message);
+        var listOfSimilarDocuments = this.vectorStore.similaritySearch(message);
         var documents = listOfSimilarDocuments
                 .stream()
                 .map(Document::getContent)
